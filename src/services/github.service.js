@@ -1,28 +1,20 @@
 import axios from "axios";
 
-const github = axios.create({
-  baseURL: "https://api.github.com",
-  headers: {
-    Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-    Accept: "application/vnd.github+json"
-  }
-});
+const BASEURL = "https://api.github.com";
 
 export async function fetchOpenIssues(repo) {
   const issues = [];
-  let page = 1;
-
-  console.log("GITHUB TOKEN----:::",process.env.GITHUB_TOKEN);
   
   try {
-    while (true) {
-      const res = await github.get(
-        `/repos/${repo}/issues`,
+      const res = await axios.get(
+        `${BASEURL}/repos/${repo}/issues`,
         {
+          headers: {
+              Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+              Accept: "application/vnd.github+json"
+          },
           params: {
             state: "open",
-            per_page: 100,
-            page
           }
         }
       );
@@ -33,13 +25,7 @@ export async function fetchOpenIssues(repo) {
 
       issues.push(...onlyIssues);
 
-      // stop when no more pages
-      if (res.data.length < 100) break;
-
-      page++;
-    }
-
-    return issues;
+      return issues;
   } catch (error) {
     console.error(
       "Failed to fetch GitHub repo issues:",

@@ -1,38 +1,59 @@
 import express from "express";
 import db from "../db/index.js";
 import { analyzeIssues } from "../services/llm.service.js";
+import { fetchOpenIssues } from "../services/github.service.js";
+import { cacheIssues } from "../utils/cacheIssues.js";
 
 const router = express.Router();
 
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
   const { repo, prompt } = req.body;
 
   if (!repo || !prompt) {
     return res.status(400).json({ error: "repo and prompt required" });
   }
 
-  db.all(
-    `SELECT title, body FROM issues WHERE repo = ?`,
-    [repo],
-    async (err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: "DB error" });
-      }
+  try {
+    const rows = await new Promise((resolve, reject) => {
+      db.all(
+        `SELECT title, body, id, html_url, created_at FROM issues WHERE repo = ?`,
+        [repo],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        }
+      );
+    });
 
-      if (rows.length === 0) {
+    let issues = rows;
+
+    if (issues.length === 0) {
+      const fetchedIssues = await fetchOpenIssues(repo);
+
+      if (fetchedIssues.length === 0) {
         return res.status(404).json({
-          error: "Repo not scanned or no issues cached"
+          error: "No open issues found for this repository"
         });
       }
 
-      try {
-        const analysis = await analyzeIssues(prompt, rows);
-        res.json({ analysis });
-      } catch {
-        res.status(500).json({ error: "LLM failed" });
-      }
+      await cacheIssues(repo, fetchedIssues);
+
+      issues = fetchedIssues.map(i => ({
+        id: i.id,
+        title: i.title,
+        body: i.body,
+        html_url: i.html_url,
+        created_at: i.created_at
+      }));
     }
-  );
+
+    const analysis = await analyzeIssues(prompt, issues);
+    res.json({ analysis });
+
+  } catch (err) {
+    console.error("Analyze error:", err.message);
+    res.status(500).json({ error: "Analyze failed" });
+  }
 });
 
 export default router;
