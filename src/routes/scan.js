@@ -12,13 +12,12 @@ router.post("/", async (req, res) => {
     .status(400)
     .json({ error: "repo is required" });
   }
-  console.log('got the repo');
   
 
   try {
     const issues = await fetchOpenIssues(repo);
 
-
+    
     
     const stmt = db.prepare(`
       INSERT OR REPLACE INTO issues
