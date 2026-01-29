@@ -133,7 +133,16 @@ and JSON file storage (harder to query and manage and risk of redundancy), where
 
 ### Prompt Used for the Final LLM Analysis
 
-The following prompt structure is used inside the `/analyze` endpoint:
+#### These prompts few prompts that were used during debugging and architectural decisions:
+
+- "How do I safely store GitHub API results using prepared SQLite statements?"
+
+- "How should I combine GitHub issues and a natural-language prompt for an LLM?"
+
+- "How can I structure LLM output so it is readable and consistent in JSON responses?"
+
+
+#### The following prompt structure is used inside the `/analyze` endpoint:
 
 ```
 You are a senior software maintainer.
