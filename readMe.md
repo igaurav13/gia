@@ -37,6 +37,7 @@ Create a `.env` file in the root directory:
 
 ```env
 PORT=3000
+GITHUB_TOKEN=your_github_token (optional)
 OPENAI_API_KEY=your_openai_api_key
 ```
 
